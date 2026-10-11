@@ -1,0 +1,240 @@
+{
+  "name": "D · Modo degradado",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## D · Modo degradado (sin IA)\n\nRespaldo del vector store. Sirve el documento madre **directamente**, sin modelo de por medio.\n\nCero alucinación, cero costo por token, cero dependencia de proveedor.\n\nTambién es la **condición de control** para la Fase 5: menú determinístico contra agente conversacional, mismas usuarias.",
+        "height": 320,
+        "width": 420,
+        "color": 4
+      },
+      "id": "0254c719-a9e6-4430-86b1-10c5c9733da9",
+      "name": "Nota 7076",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "chat_id"
+            },
+            {
+              "name": "modulo"
+            }
+          ]
+        }
+      },
+      "id": "4c71e296-1f35-45e9-83b2-03013050ff02",
+      "name": "D1 · Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "12oxzNanm8siP0pohslU0Q1LtpVhGFfrmGWCyHgwTh5U",
+          "mode": "list",
+          "cachedResultName": "Documento Madre - Recursos Violencia de Genero CDMX v1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12oxzNanm8siP0pohslU0Q1LtpVhGFfrmGWCyHgwTh5U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 159320870,
+          "mode": "list",
+          "cachedResultName": "Documento Madre - Recursos Violencia de Genero CDMX v1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12oxzNanm8siP0pohslU0Q1LtpVhGFfrmGWCyHgwTh5U/edit#gid=159320870"
+        },
+        "options": {}
+      },
+      "id": "40e19d83-a4e5-403c-9d22-c961b2edb002",
+      "name": "D2 · Leer documento madre",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        704,
+        144
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ATXVr2ltnX9Rx9mT",
+          "name": "Google Sheets account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9512ae30-a4eb-4a1e-981b-50cc9363eb4a",
+              "leftValue": "={{ $json.estado }}",
+              "rightValue": "verificado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "39764171-a2c9-4593-af2c-1facbf607477",
+              "leftValue": "={{ $json.modulo }}",
+              "rightValue": "={{ $('D1 · Entrada').item.json.modulo }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1ba07f3a-1d61-4c06-9eaf-994430e1b418",
+      "name": "D3 · Verificados del módulo",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        928,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatea los recursos verificados del módulo elegido.\n// Cero IA: todo el texto sale de las columnas del documento madre.\n// Ningún dato se completa, se infiere ni se reformatea.\n\nconst filas = $input.all();\n\nif (filas.length === 0) {\n  return [{ json: { texto_recursos:\n    'No hay recursos verificados disponibles para esa opción en este momento.\\n\\nSi necesitas ayuda urgente: 911' } }];\n}\n\nconst bloques = filas.map(item => {\n  const r = item.json;\n  const lineas = [`<b>${r.nombre}</b>`];\n  if (r.telefono)   lineas.push(`📞 ${r.telefono}`);\n  if (r.direccion)  lineas.push(`📍 ${r.direccion}`);\n  if (r.horario)    lineas.push(`🕐 ${r.horario}`);\n  if (r.requisitos) lineas.push(`ℹ️ ${r.requisitos}`);\n  return lineas.join('\\n');\n});\n\nreturn [{ json: { texto_recursos: bloques.join('\\n\\n') } }];\n"
+      },
+      "id": "faa8b13c-e230-4f9e-b9c6-5409c7a7c323",
+      "name": "D4 · Formatear (sin IA)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('D1 · Entrada').item.json.chat_id }}",
+        "text": "={{ $json.texto_recursos }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "7c915b87-9629-4005-8e3b-e1e0d0f783f5",
+      "name": "D5 · Enviar a Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        144
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "webhookId": "d6621a56-ba4e-476e-a54c-a6e3a15e81ae",
+      "credentials": {
+        "telegramApi": {
+          "id": "Gz4Bn0j3QhjWVexj",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### Ningún teléfono en el código\n\nTodo lo que D4 imprime viene de `$json`. Si una columna está vacía, la línea simplemente no aparece.\n\nNunca escribas un número dentro del nodo Code.",
+        "height": 200,
+        "width": 380,
+        "color": 3
+      },
+      "id": "e4157076-f2a1-48d6-9191-c719bf8ca413",
+      "name": "Nota ff91",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        384
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "D1 · Entrada": {
+      "main": [
+        [
+          {
+            "node": "D2 · Leer documento madre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "D2 · Leer documento madre": {
+      "main": [
+        [
+          {
+            "node": "D3 · Verificados del módulo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "D3 · Verificados del módulo": {
+      "main": [
+        [
+          {
+            "node": "D4 · Formatear (sin IA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "D4 · Formatear (sin IA)": {
+      "main": [
+        [
+          {
+            "node": "D5 · Enviar a Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b2060ab1-d5b1-4477-9237-f91a340ac76e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d952c86efb233c99ef884bd2e5545be1d0459d156fa460651d1ec2f20bfe6f45"
+  },
+  "nodeGroups": [],
+  "id": "vnBBgNdPWwWVrv2S",
+  "tags": []
+}

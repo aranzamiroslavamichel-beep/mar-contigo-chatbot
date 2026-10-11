@@ -1,0 +1,388 @@
+{
+  "name": "G · Banco de casos de prueba",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## G · Banco de casos de prueba\n\nCorre todos los casos contra el sub-workflow `F` y escribe resultados fechados en Google Sheets.\n\n**La métrica que importa no es la tasa de acierto general.** Son los falsos negativos en emergencia: la única cifra que no admite ningún valor distinto de cero (principio 2.3).\n\nCórrelo después de cada cambio al regex o a las categorías. Cada caso de borde que descubras se vuelve una fila permanente.",
+        "height": 360,
+        "width": 440,
+        "color": 4
+      },
+      "id": "ea84e0c7-de0a-4fa6-b17a-31719ca537ee",
+      "name": "Nota f3be",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6c551bb8-0726-4692-a88a-9d3138dc67e1",
+      "name": "G1 · Ejecutar manualmente",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        656,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "12oxzNanm8siP0pohslU0Q1LtpVhGFfrmGWCyHgwTh5U",
+          "mode": "list",
+          "cachedResultName": "Documento Madre - Recursos Violencia de Genero CDMX v1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12oxzNanm8siP0pohslU0Q1LtpVhGFfrmGWCyHgwTh5U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1670751607,
+          "mode": "list",
+          "cachedResultName": "Pruebas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12oxzNanm8siP0pohslU0Q1LtpVhGFfrmGWCyHgwTh5U/edit#gid=1670751607"
+        },
+        "options": {}
+      },
+      "id": "94bdaa34-71e9-4aef-a93e-f4e89bdac986",
+      "name": "G2 · Leer casos_prueba",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        848,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ATXVr2ltnX9Rx9mT",
+          "name": "Google Sheets account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "66a052a3-cef4-4289-b886-d640eb188781",
+      "name": "G3 · Recorrer casos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1072,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Métricas del corrido completo.\nconst r = $input.all().map(i => i.json);\nconst total = r.length;\nconst aciertos = r.filter(x => x.acierto).length;\nconst falsos_negativos = r.filter(x => x.falso_negativo);\n\nreturn [{\n  json: {\n    fecha: $now.toISO(),\n    casos_totales: total,\n    aciertos: aciertos,\n    tasa_acierto: total ? (aciertos / total * 100).toFixed(1) + '%' : 'n/a',\n    falsos_negativos: falsos_negativos.length,\n    casos_falso_negativo: falsos_negativos.map(x => x.caso_id).join(', ') || 'ninguno',\n    APROBADO: falsos_negativos.length === 0\n  }\n}];\n"
+      },
+      "id": "f2a028ed-d58c-4cec-9450-32254075c2b8",
+      "name": "G7 · Métricas del corrido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "xJSC5YgRUNDDVklY",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/xJSC5YgRUNDDVklY",
+          "cachedResultName": "F · Clasificador de intención"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "mensaje": "Esto es indispensable para que G pueda enviarle los mensajes de prueba a F y evaluar sus respuestas."
+          },
+          "matchingColumns": [
+            "mensaje"
+          ],
+          "schema": [
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "3a219bcc-266c-4fbf-840a-114959719c5d",
+      "name": "G4 · Clasificar (sub-workflow F)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1312,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Obtenemos los datos de manera segura usando encadenamiento opcional (?.)\nconst currentJson = $json || {};\nconst g3Item = $('G3 · Recorrer casos').first()?.json || {};\n\nconst obtenida = currentJson.categoria || 'desconocida';\nconst esperada = g3Item.categoria_esperada || 'desconocida';\n\n// Falso negativo: esperábamos emergencia y el sistema no la detectó.\nconst falso_negativo = (esperada === 'emergencia' && obtenida !== 'emergencia');\n\nreturn {\n  json: {\n    fecha: $now.toISO(),\n    caso_id: g3Item.id || 'N/A',\n    mensaje: g3Item.mensaje || 'Sin mensaje',\n    esperada: esperada,\n    obtenida: obtenida,\n    acierto: obtenida === esperada,\n    falso_negativo: falso_negativo,\n    capa_deteccion: currentJson.capa_deteccion || 'N/A',\n    modelo_usado: currentJson.modelo_usado || 'N/A'\n  }\n};"
+      },
+      "id": "41b8569a-929e-45bc-8b43-50ffb7f3cfc1",
+      "name": "G5 · Comparar resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1OljN0MtR3weNlNrO7hNHPj2oAnP-IkcOyeBXRvlPlDg",
+          "mode": "list",
+          "cachedResultName": "Hoja resultados_pruebas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OljN0MtR3weNlNrO7hNHPj2oAnP-IkcOyeBXRvlPlDg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OljN0MtR3weNlNrO7hNHPj2oAnP-IkcOyeBXRvlPlDg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $json.fecha }}",
+            "caso_id": "={{ $json.caso_id }}",
+            "mensaje": "={{ $json.mensaje }}",
+            "esperada": "={{ $json.esperada }}",
+            "obtenida": "={{ $json.obtenida }}",
+            "acierto": "={{ $json.acierto }}",
+            "falso_negativo": "={{ $json.falso_negativo }}",
+            "capa_deteccion": "={{ $json.capa_deteccion }}",
+            "modelo_usado": "={{ $json.modelo_usado }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caso_id",
+              "displayName": "caso_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "esperada",
+              "displayName": "esperada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "obtenida",
+              "displayName": "obtenida",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "acierto",
+              "displayName": "acierto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "falso_negativo",
+              "displayName": "falso_negativo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "capa_deteccion",
+              "displayName": "capa_deteccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "modelo_usado",
+              "displayName": "modelo_usado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "cb4b9bbc-cf99-4d07-b7c2-2e693c66482d",
+      "name": "G6 · Guardar resultado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1744,
+        224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ATXVr2ltnX9Rx9mT",
+          "name": "Google Sheets account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### Hoja `casos_prueba`\n\nColumnas: `id`, `mensaje`, `categoria_esperada`, `notas`\n\nPestaña aparte, **no** en el documento madre.\n\n### Hoja `resultados_pruebas`\n\n`fecha`, `caso_id`, `mensaje`, `esperada`, `obtenida`, `acierto`, `falso_negativo`, `capa_deteccion`, `modelo_usado`",
+        "height": 300,
+        "width": 420,
+        "color": 5
+      },
+      "id": "e87bb0d0-0d51-4595-84eb-fac918d522f1",
+      "name": "Nota fdde",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        848,
+        384
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "G1 · Ejecutar manualmente": {
+      "main": [
+        [
+          {
+            "node": "G2 · Leer casos_prueba",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "G2 · Leer casos_prueba": {
+      "main": [
+        [
+          {
+            "node": "G3 · Recorrer casos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "G3 · Recorrer casos": {
+      "main": [
+        [
+          {
+            "node": "G7 · Métricas del corrido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "G4 · Clasificar (sub-workflow F)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "G4 · Clasificar (sub-workflow F)": {
+      "main": [
+        [
+          {
+            "node": "G5 · Comparar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "G5 · Comparar resultado": {
+      "main": [
+        [
+          {
+            "node": "G6 · Guardar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "G6 · Guardar resultado": {
+      "main": [
+        [
+          {
+            "node": "G3 · Recorrer casos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7918017c-168b-45f2-9f07-1b743c768e6e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d952c86efb233c99ef884bd2e5545be1d0459d156fa460651d1ec2f20bfe6f45"
+  },
+  "nodeGroups": [],
+  "id": "NafGUZbcgL2zK3Qd",
+  "tags": []
+}

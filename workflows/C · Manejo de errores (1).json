@@ -1,0 +1,84 @@
+{
+  "name": "C · Manejo de errores",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## C · Manejo de errores\n\nSe conecta desde **Settings → Error Workflow** de cada workflow.\n\nCubre lo imprevisto: credencial expirada, nodo mal configurado tras una edición, fallo del propio N8N.",
+        "height": 220,
+        "width": 400,
+        "color": 4
+      },
+      "id": "21266e55-2d64-49a2-805d-f90fad690fa1",
+      "name": "Nota 9201",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b616c703-308f-42af-a0b5-a23be81ec4ea",
+      "name": "C1 · Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        544,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "8682115288",
+        "text": "=⚠️ Falla en Mar contigo\nWorkflow: {{ $json.workflow.name }}\nNodo: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "54084611-c739-4a7c-a1e5-d17c47627855",
+      "name": "C2 · Alertar al equipo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        768,
+        0
+      ],
+      "webhookId": "633dbfc4-203f-406b-908c-a41e2d7022e9",
+      "credentials": {
+        "telegramApi": {
+          "id": "Gz4Bn0j3QhjWVexj",
+          "name": "Telegram account 5"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "C1 · Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "C2 · Alertar al equipo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e70c7e6d-3b27-448c-b732-d6bc150f32cf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d952c86efb233c99ef884bd2e5545be1d0459d156fa460651d1ec2f20bfe6f45"
+  },
+  "nodeGroups": [],
+  "id": "rNFG5tesS66SwSUM",
+  "tags": []
+}
