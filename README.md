@@ -133,6 +133,9 @@ Texto de emergencia fijo, sin ninguna dependencia externa.
 El Documento Madre no se publica en el repositorio: contiene datos operativos que deben mantenerse bajo control y revisión humana.
 
 7. Puesta en marcha
+
+Para alojar esta instancia en **Railway con Docker**, sigue la [guía de despliegue](docs/railway.md). El repositorio incluye el `Dockerfile` y un `.env.example` con las variables para Railway. Necesitas un volumen persistente, un dominio HTTPS e importar los workflows y configurar sus credenciales antes de activar Telegram. Los pasos siguientes describen la instalación original en n8n Cloud.
+
 Requisitos
 Cuenta de n8n Cloud [COMPLETAR plan]
 Dos proyectos de Google Cloud con la API de Gemini habilitada (una API key en cada uno)

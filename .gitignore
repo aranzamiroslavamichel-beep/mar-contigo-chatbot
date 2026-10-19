@@ -1,0 +1,7 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.n8n/
+n8n_data/
+backups/

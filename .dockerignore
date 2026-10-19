@@ -1,0 +1,6 @@
+# Solo se necesita el Dockerfile y los workflows exportados.
+**
+!Dockerfile
+!workflows/
+workflows/*
+!workflows/*.json
