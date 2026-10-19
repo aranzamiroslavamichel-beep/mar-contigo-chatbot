@@ -67,7 +67,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose",
+            "typeValidation": "strict",
             "version": 2
           },
           "conditions": [
@@ -317,7 +317,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "5fc2b7c3-ed9b-41fd-ac59-51decadef2cb",
+  "versionId": "de3972bb-583f-47b5-b51e-3df1c5c71d72",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "d952c86efb233c99ef884bd2e5545be1d0459d156fa460651d1ec2f20bfe6f45"

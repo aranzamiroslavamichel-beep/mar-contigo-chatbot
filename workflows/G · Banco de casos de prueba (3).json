@@ -8,24 +8,24 @@
         "width": 440,
         "color": 4
       },
-      "id": "ea84e0c7-de0a-4fa6-b17a-31719ca537ee",
+      "id": "976d4d4a-ef03-4c0c-beaa-186cae260653",
       "name": "Nota f3be",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        144,
-        -80
+        -128,
+        1376
       ]
     },
     {
       "parameters": {},
-      "id": "6c551bb8-0726-4692-a88a-9d3138dc67e1",
+      "id": "8a94bb44-5e36-4116-ad94-50dbbf55fbe6",
       "name": "G1 · Ejecutar manualmente",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        656,
-        80
+        384,
+        1536
       ]
     },
     {
@@ -46,13 +46,13 @@
         },
         "options": {}
       },
-      "id": "94bdaa34-71e9-4aef-a93e-f4e89bdac986",
+      "id": "4b86ea48-6eb3-4603-adae-cc9f69f87b49",
       "name": "G2 · Leer casos_prueba",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        848,
-        80
+        576,
+        1536
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -65,26 +65,26 @@
       "parameters": {
         "options": {}
       },
-      "id": "66a052a3-cef4-4289-b886-d640eb188781",
+      "id": "0d29b1f8-92a9-4485-b224-b431c44718eb",
       "name": "G3 · Recorrer casos",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1072,
-        80
+        800,
+        1536
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Métricas del corrido completo.\nconst r = $input.all().map(i => i.json);\nconst total = r.length;\nconst aciertos = r.filter(x => x.acierto).length;\nconst falsos_negativos = r.filter(x => x.falso_negativo);\n\nreturn [{\n  json: {\n    fecha: $now.toISO(),\n    casos_totales: total,\n    aciertos: aciertos,\n    tasa_acierto: total ? (aciertos / total * 100).toFixed(1) + '%' : 'n/a',\n    falsos_negativos: falsos_negativos.length,\n    casos_falso_negativo: falsos_negativos.map(x => x.caso_id).join(', ') || 'ninguno',\n    APROBADO: falsos_negativos.length === 0\n  }\n}];\n"
+        "jsCode": "// Métricas del corrido completo (se ven en la salida de este nodo).\nconst r = $input.all().map(i => i.json);\nconst v = x => x === true || x === 'true' || x === 'TRUE';\nconst total = r.length;\nconst exactos = r.filter(x => v(x.acierto)).length;\nconst conAcept = r.filter(x => v(x.acierto_con_aceptables)).length;\nconst emerg = r.filter(x => x.esperada === 'emergencia');\nconst fn = r.filter(x => v(x.falso_negativo));\nconst pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : 'n/a';\n\nreturn [{ json: {\n  fecha: $now.toISO(),\n  casos_totales: total,\n  exactitud_exacta: pct(exactos, total),\n  exactitud_con_aceptables: pct(conAcept, total),\n  recall_emergencia: pct(emerg.length - fn.length, emerg.length),\n  falsos_negativos: fn.length,\n  casos_falso_negativo: fn.map(x => x.caso_id).join(', ') || 'ninguno',\n  errores_no_aceptables: r.filter(x => !v(x.acierto_con_aceptables)).map(x => x.caso_id).join(', ') || 'ninguno',\n  APROBADO: fn.length === 0,\n} }];\n"
       },
-      "id": "f2a028ed-d58c-4cec-9450-32254075c2b8",
+      "id": "04489f6c-7295-46e1-b908-9fb293d18a63",
       "name": "G7 · Métricas del corrido",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1312,
-        -64
+        1040,
+        1392
       ]
     },
     {
@@ -99,7 +99,7 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "mensaje": "Esto es indispensable para que G pueda enviarle los mensajes de prueba a F y evaluar sus respuestas."
+            "mensaje": "={{ $json['Mensaje de Entrada'] }}"
           },
           "matchingColumns": [
             "mensaje"
@@ -121,27 +121,27 @@
         },
         "options": {}
       },
-      "id": "3a219bcc-266c-4fbf-840a-114959719c5d",
+      "id": "f8837191-e10d-4a39-a8f5-1211c1835d66",
       "name": "G4 · Clasificar (sub-workflow F)",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        1312,
-        224
+        1040,
+        1680
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Obtenemos los datos de manera segura usando encadenamiento opcional (?.)\nconst currentJson = $json || {};\nconst g3Item = $('G3 · Recorrer casos').first()?.json || {};\n\nconst obtenida = currentJson.categoria || 'desconocida';\nconst esperada = g3Item.categoria_esperada || 'desconocida';\n\n// Falso negativo: esperábamos emergencia y el sistema no la detectó.\nconst falso_negativo = (esperada === 'emergencia' && obtenida !== 'emergencia');\n\nreturn {\n  json: {\n    fecha: $now.toISO(),\n    caso_id: g3Item.id || 'N/A',\n    mensaje: g3Item.mensaje || 'Sin mensaje',\n    esperada: esperada,\n    obtenida: obtenida,\n    acierto: obtenida === esperada,\n    falso_negativo: falso_negativo,\n    capa_deteccion: currentJson.capa_deteccion || 'N/A',\n    modelo_usado: currentJson.modelo_usado || 'N/A'\n  }\n};"
+        "jsCode": "// Compara la categoría obtenida con la esperada para el caso actual del bucle.\nconst r = $json || {};\nlet caso = {};\ntry { caso = $('G3 · Recorrer casos').item.json || {}; }\ncatch (e) { caso = $('G3 · Recorrer casos').first()?.json || {}; }\n\nconst obtenida = r.categoria || 'desconocida';\nconst esperada = caso['Intención Esperada'] || 'desconocida';\n\n// \"Aceptable también: X\" en la columna de notas → X también cuenta como acierto benigno.\nconst notas = String(caso['Descripción / Notas'] || '');\nconst m = notas.match(/Aceptable también:\\s*([a-z_]+)/i);\nconst aceptable = m ? m[1].toLowerCase() : '';\n\nreturn { json: {\n  fecha: $now.toISO(),\n  caso_id: caso['ID Prueba'] || 'N/A',\n  mensaje: caso['Mensaje de Entrada'] || 'Sin mensaje',\n  esperada,\n  obtenida,\n  acierto: obtenida === esperada,\n  acierto_con_aceptables: obtenida === esperada || (aceptable !== '' && obtenida === aceptable),\n  falso_negativo: esperada === 'emergencia' && obtenida !== 'emergencia',\n  capa_deteccion: r.capa_deteccion || 'N/A',\n  modelo_usado: r.modelo_usado || 'N/A',\n} };\n"
       },
-      "id": "41b8569a-929e-45bc-8b43-50ffb7f3cfc1",
+      "id": "1c67f75a-cf69-494a-b084-4f53d60d598d",
       "name": "G5 · Comparar resultado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1536,
-        224
+        1264,
+        1680
       ]
     },
     {
@@ -172,7 +172,8 @@
             "acierto": "={{ $json.acierto }}",
             "falso_negativo": "={{ $json.falso_negativo }}",
             "capa_deteccion": "={{ $json.capa_deteccion }}",
-            "modelo_usado": "={{ $json.modelo_usado }}"
+            "modelo_usado": "={{ $json.modelo_usado }}",
+            "acierto_con_aceptables": "={{ $json.acierto_con_aceptables }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -256,6 +257,15 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "acierto_con_aceptables",
+              "displayName": "acierto_con_aceptables",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -263,13 +273,13 @@
         },
         "options": {}
       },
-      "id": "cb4b9bbc-cf99-4d07-b7c2-2e693c66482d",
+      "id": "14dcce01-9579-4a12-8bb3-eacda99791d9",
       "name": "G6 · Guardar resultado",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        1744,
-        224
+        1472,
+        1680
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -280,19 +290,31 @@
     },
     {
       "parameters": {
-        "content": "### Hoja `casos_prueba`\n\nColumnas: `id`, `mensaje`, `categoria_esperada`, `notas`\n\nPestaña aparte, **no** en el documento madre.\n\n### Hoja `resultados_pruebas`\n\n`fecha`, `caso_id`, `mensaje`, `esperada`, `obtenida`, `acierto`, `falso_negativo`, `capa_deteccion`, `modelo_usado`",
-        "height": 300,
+        "content": "### Pestaña `Pruebas` (Documento Madre)\n\n`ID Prueba`, `Mensaje de Entrada`, `Intención Esperada`, `Descripción / Notas`\n\nSi las notas dicen **\"Aceptable también: X\"**, esa categoría cuenta en `acierto_con_aceptables`.\n\n### Hoja `resultados_pruebas`\n\n`fecha`, `caso_id`, `mensaje`, `esperada`, `obtenida`, `acierto`, `falso_negativo`, `capa_deteccion`, `modelo_usado`, `acierto_con_aceptables`\n\nLas métricas del corrido salen en **G7** al terminar.",
+        "height": 360,
         "width": 420,
         "color": 5
       },
-      "id": "e87bb0d0-0d51-4595-84eb-fac918d522f1",
+      "id": "185bd3b9-6a7c-4c6b-8bab-cba36a1a43bd",
       "name": "Nota fdde",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        848,
-        384
+        576,
+        1840
       ]
+    },
+    {
+      "parameters": {},
+      "id": "c60aee5e-aa0b-4f70-9f03-99d0634e96ac",
+      "name": "G8 · Pausa 5 s (cuota)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1696,
+        1680
+      ],
+      "webhookId": "0113c4a8-d3d2-4364-92b1-c8b6b74358b3"
     }
   ],
   "pinData": {},
@@ -363,6 +385,17 @@
       "main": [
         [
           {
+            "node": "G8 · Pausa 5 s (cuota)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "G8 · Pausa 5 s (cuota)": {
+      "main": [
+        [
+          {
             "node": "G3 · Recorrer casos",
             "type": "main",
             "index": 0
@@ -377,7 +410,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "7918017c-168b-45f2-9f07-1b743c768e6e",
+  "versionId": "033ba971-d151-44f9-aaea-96b2cc0c6509",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "d952c86efb233c99ef884bd2e5545be1d0459d156fa460651d1ec2f20bfe6f45"
