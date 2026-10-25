@@ -136,6 +136,8 @@ El Documento Madre no se publica en el repositorio: contiene datos operativos qu
 
 Para alojar esta instancia en **Railway con Docker**, sigue la [guía de despliegue](docs/railway.md). El repositorio incluye el `Dockerfile` y un `.env.example` con las variables para Railway. Necesitas un volumen persistente, un dominio HTTPS e importar los workflows y configurar sus credenciales antes de activar Telegram. Los pasos siguientes describen la instalación original en n8n Cloud.
 
+Para añadir el gateway de IA como otro servicio Docker, sigue la [guía de LiteLLM en Railway con Supabase](docs/litellm-railway.md). Su Dockerfile está en `litellm/`; los workflows de n8n se conectan después de probar el gateway por separado.
+
 Requisitos
 Cuenta de n8n Cloud [COMPLETAR plan]
 Dos proyectos de Google Cloud con la API de Gemini habilitada (una API key en cada uno)

@@ -1,5 +1,6 @@
-# Primera fase: API sin base de datos, panel ni registro persistente de costes.
-# Los aliases permiten cambiar modelos sin volver a editar los nodos de n8n.
+# Gateway con PostgreSQL externo (Supabase), panel y metricas persistentes.
+# Estos modelos y fallbacks se gestionan en Git. El panel permite consultarlos;
+# los modelos definidos aqui no se editan desde el panel.
 model_list:
   - model_name: mar-chat
     litellm_params:
@@ -24,6 +25,11 @@ router_settings:
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  database_connection_pool_limit: 5
+  store_model_in_db: true
+  disable_spend_logs: false
+  store_prompts_in_spend_logs: false
 
 litellm_settings:
   # Mantiene metadatos tecnicos sin registrar mensajes/respuestas en callbacks.
