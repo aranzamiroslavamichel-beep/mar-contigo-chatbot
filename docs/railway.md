@@ -14,13 +14,15 @@ La configuración inicial usa **una instancia de n8n y SQLite en un volumen pers
 
 ## 2. Crear el almacenamiento persistente
 
-Antes de importar nada, adjunta un **Volume** al servicio n8n con esta ruta exacta:
+Antes de importar nada, abre **+Add**, arriba a la derecha del proyecto, crea un **Volume** y conéctalo al servicio `mar-contigo-chatbot`. Configura esta ruta exacta como **Mount Path**:
 
 ```text
 /home/node/.n8n
 ```
 
 Aquí se guardan SQLite, los workflows importados, las credenciales cifradas y la configuración. El sistema de archivos normal del contenedor se reemplaza en los redeploys. Configura backups del volumen y guarda aparte una copia segura de la clave de cifrado.
+
+Railway monta el volumen como root. Esta imagen usa el usuario `node`, por lo que debes añadir **`RAILWAY_RUN_UID=0`** en las variables del servicio, como indica `.env.example`. Esto ejecuta n8n como root en Railway y evita el error `EACCES: permission denied, open '/home/node/.n8n/config'`. `N8N_USER_FOLDER=/home/node`, ya definido en el Dockerfile, mantiene los datos en la ruta del volumen.
 
 ## 3. Configurar dominio y variables
 

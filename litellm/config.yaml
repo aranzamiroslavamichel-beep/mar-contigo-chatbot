@@ -1,0 +1,30 @@
+# Primera fase: API sin base de datos, panel ni registro persistente de costes.
+# Los aliases permiten cambiar modelos sin volver a editar los nodos de n8n.
+model_list:
+  - model_name: mar-chat
+    litellm_params:
+      model: gemini/gemini-3.1-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: mar-clasificador
+    litellm_params:
+      model: gemini/gemini-3.1-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: mar-respaldo
+    litellm_params:
+      model: gemini/gemini-2.5-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+
+router_settings:
+  # Un intento por modelo; evita multiplicar los reintentos del cliente n8n.
+  num_retries: 0
+  timeout: 20
+  fallbacks:
+    - mar-chat: [mar-respaldo]
+    - mar-clasificador: [mar-respaldo]
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  # Mantiene metadatos tecnicos sin registrar mensajes/respuestas en callbacks.
+  turn_off_message_logging: true
